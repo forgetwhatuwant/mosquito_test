@@ -4,7 +4,7 @@ import uuid
 import time
 
 # MQTT Broker settings
-MQTT_BROKER = "192.168.10.104"  # Change to your Mosquitto server IP if not local
+MQTT_BROKER = "localhost"  # Change to your Mosquitto server IP if not local
 MQTT_PORT = 8443  # Updated to match your Mosquitto listener
 CA_CERTS_PATH = "/etc/mosquitto/certs/ca.crt"  # Updated path
 
