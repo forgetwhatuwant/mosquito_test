@@ -5,8 +5,9 @@ import time
 import threading
 
 # MQTT Broker settings
-MQTT_BROKER = "localhost"  # Change to your Mosquitto server IP if not local
-MQTT_PORT = 1883
+MQTT_BROKER = "192.168.10.104"  # Change to your Mosquitto server IP if not local
+MQTT_PORT = 8443  # Updated to match your Mosquitto listener
+CA_CERTS_PATH = "/etc/mosquitto/certs/ca.crt"  # Updated path
 
 # Topics
 PUB_TOPIC = "/a1ZNnqHo7Cu/70756475313335/user/pub_sdk"  # Robot publishes here
@@ -47,7 +48,8 @@ def simulate_robot(client):
             "body": {
                 "angle": robot_state["angle"],
                 "x": robot_state["x"],
-                "y": robot_state["y"]
+                "y": robot_state["y"],
+                "timestamp": time.time()
             },
             "groupId": "default",
             "from": "",
@@ -59,12 +61,24 @@ def simulate_robot(client):
         }
         client.publish(PUB_TOPIC, json.dumps(message, ensure_ascii=False))
         #print(f"[Robot] Published state: {json.dumps(message, indent=2, ensure_ascii=False)}")
-        time.sleep(0.1)  # Update every 5 seconds
+        time.sleep(0.1)  # Update every 0.1 seconds
 
 if __name__ == "__main__":
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message
+
+    # Configure TLS
+    if CA_CERTS_PATH:
+        try:
+            client.tls_set(ca_certs=CA_CERTS_PATH)
+            print(f"TLS configured with CA: {CA_CERTS_PATH}")
+        except Exception as e:
+            print(f"Error configuring TLS: {e}. Check CA_CERTS_PATH.")
+            # Decide if you want to exit or try non-TLS as a fallback
+            exit()
+    else:
+        print("CA_CERTS_PATH not set. Attempting non-TLS connection.")
 
     client.connect(MQTT_BROKER, MQTT_PORT, 60)
     client.loop_start()

@@ -1,10 +1,12 @@
 import paho.mqtt.client as mqtt
 import json
 import uuid
+import time
 
 # MQTT Broker settings
-MQTT_BROKER = "localhost"  # Change to your Mosquitto server IP if not local
-MQTT_PORT = 1883
+MQTT_BROKER = "192.168.10.104"  # Change to your Mosquitto server IP if not local
+MQTT_PORT = 8443  # Updated to match your Mosquitto listener
+CA_CERTS_PATH = "/etc/mosquitto/certs/ca.crt"  # Updated path
 
 # Topics
 PUB_TOPIC = "/a1ZNnqHo7Cu/70756475313335/user/sub_sdk"  # Upper computer sends commands here
@@ -30,7 +32,8 @@ def send_command(client, msgType, body, target="70756475313335", source="master"
         "msgType": msgType,
         "source": source,
         "body": body,
-        "target": target
+        "target": target,
+        "timestamp": time.time()
     }
     if vn is not None:
         message["vn"] = vn
@@ -45,6 +48,18 @@ if __name__ == "__main__":
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message
+
+    # Configure TLS
+    if CA_CERTS_PATH:
+        try:
+            client.tls_set(ca_certs=CA_CERTS_PATH)
+            print(f"TLS configured with CA: {CA_CERTS_PATH}")
+        except Exception as e:
+            print(f"Error configuring TLS: {e}. Check CA_CERTS_PATH.")
+            # Decide if you want to exit or try non-TLS as a fallback
+            exit()
+    else:
+        print("CA_CERTS_PATH not set. Attempting non-TLS connection.")
 
     client.connect(MQTT_BROKER, MQTT_PORT, 60)
     client.loop_start()
